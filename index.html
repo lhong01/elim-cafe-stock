@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Stock — ELIM Café</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brown: #6B3A2A;
+      --brown-light: #8B5E4A;
+      --gold: #C8923A;
+      --cream: #FFF8F0;
+      --bg: #F5EDE4;
+      --card: #FFFFFF;
+      --text: #2C1810;
+      --text-muted: #7A5548;
+      --ok: #2D9B6F;
+      --ok-bg: #E8F7F1;
+      --warn: #C87820;
+      --warn-bg: #FDF3E3;
+      --danger: #C03030;
+      --danger-bg: #FDEAEA;
+      --border: #E8D5C8;
+      --shadow: 0 2px 8px rgba(107,58,42,0.10);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 70px;
+    }
+
+    header {
+      background: var(--brown);
+      color: white;
+      padding: 16px 20px 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.3px; }
+    header p { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+
+    nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: white;
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+    }
+    nav button {
+      flex: 1;
+      border: none;
+      background: none;
+      padding: 10px 4px 8px;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 10px;
+      transition: color 0.15s;
+    }
+    nav button.active { color: var(--brown); }
+    nav button svg { width: 22px; height: 22px; }
+    nav button span { font-weight: 500; }
+
+    .panel { display: none; padding: 16px; }
+    .panel.active { display: block; }
+
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--brown);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+
+    .product-row {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 10px;
+    }
+    .product-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .product-row:first-child { padding-top: 0; }
+
+    .product-name {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .product-unit {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: block;
+    }
+
+    .product-current {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+      min-width: 45px;
+    }
+
+    .counter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .counter button {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--cream);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--brown);
+      font-weight: 700;
+      transition: background 0.1s;
+    }
+    .counter button:active { background: var(--border); }
+    .counter input {
+      width: 46px;
+      text-align: center;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 4px;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      background: white;
+    }
+    .counter input:focus { outline: none; border-color: var(--brown); }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      text-align: center;
+    }
+    .btn:active { opacity: 0.85; transform: scale(0.98); }
+    .btn-primary { background: var(--brown); color: white; }
+    .btn-secondary { background: var(--gold); color: white; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
+    }
+    .form-group select,
+    .form-group input[type="number"] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      background: white;
+      color: var(--text);
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .form-group select:focus,
+    .form-group input[type="number"]:focus {
+      outline: none;
+      border-color: var(--brown);
+    }
+
+    .alert-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      gap: 12px;
+    }
+    .alert-item:last-child { margin-bottom: 0; }
+    .alert-item.ok { background: var(--ok-bg); }
+    .alert-item.warn { background: var(--warn-bg); }
+    .alert-item.danger { background: var(--danger-bg); }
+
+    .alert-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .ok .alert-dot { background: var(--ok); }
+    .warn .alert-dot { background: var(--warn); }
+    .danger .alert-dot { background: var(--danger); }
+
+    .alert-info { flex: 1; min-width: 0; }
+    .alert-name { font-size: 14px; font-weight: 600; }
+    .alert-detail { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .alert-status {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+    .ok .alert-status { color: var(--ok); background: rgba(45,155,111,0.15); }
+    .warn .alert-status { color: var(--warn); background: rgba(200,120,32,0.15); }
+    .danger .alert-status { color: var(--danger); background: rgba(192,48,48,0.15); }
+
+    .hist-item {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .hist-item:last-child { border-bottom: none; }
+    .hist-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .hist-icon.cierre { background: #E8F0FD; }
+    .hist-icon.compra { background: #E8F7F1; }
+    .hist-icon.mover  { background: #FDF3E3; }
+    .hist-body { flex: 1; min-width: 0; }
+    .hist-title { font-size: 13px; font-weight: 600; }
+    .hist-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; word-break: break-word; }
+    .hist-date { font-size: 11px; color: var(--text-muted); flex-shrink: 0; text-align: right; min-width: 56px; }
+
+    .toast {
+      position: fixed;
+      bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #2C1810;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 200;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .consumption-note {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--bg);
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-top: 14px;
+      line-height: 1.5;
+    }
+    .consumption-note strong { color: var(--danger); }
+
+    .empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+    .empty-icon { font-size: 40px; margin-bottom: 10px; }
+    .empty-text { font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>☕ ELIM Café — Stock</h1>
+  <p id="header-date"></p>
+</header>
+
+<!-- CIERRE -->
+<div id="panel-cierre" class="panel active">
+  <div class="card">
+    <div class="card-title">Cierre del domingo</div>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+      Ingresá cuánto quedó en heladera al cierre del turno.
+    </p>
+    <div id="cierre-list"></div>
+    <div class="consumption-note" id="cierre-note" style="display:none">
+      Consumo del turno: <strong id="cierre-consumo-text"></strong>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="guardarCierre()">Registrar Cierre</button>
+</div>
+
+<!-- COMPRA / MOVER -->
+<div id="panel-compra" class="panel">
+  <div class="card">
+    <div class="card-title">Registrar Compra</div>
+    <div class="form-group">
+      <label>Producto</label>
+      <select id="compra-producto"></select>
+    </div>
+    <div class="form-group">
+      <label>Destino</label>
+      <select id="compra-destino">
+        <option value="deposito">Depósito-Pasillo</option>
+        <option value="oficina">Oficina-Pastor</option>
+        <option value="heladera">Heladera</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Cantidad</label>
+      <div class="counter">
+        <button onclick="adjustInput('compra-cantidad', -1)">−</button>
+        <input type="number" id="compra-cantidad" value="1" min="1" max="999">
+        <button onclick="adjustInput('compra-cantidad', 1)">+</button>
+      </div>
+    </div>
+    <button class="btn btn-secondary" onclick="guardarCompra()">Registrar Compra</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Mover a Heladera</div>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+      Registrá cuando reponés la heladera desde el depósito durante el turno.
+    </p>
+    <div class="form-group">
+      <label>Producto</label>
+      <select id="mover-producto"></select>
+    </div>
+    <div class="form-group">
+      <label>Origen</label>
+      <select id="mover-origen">
+        <option value="deposito">Depósito-Pasillo</option>
+        <option value="oficina">Oficina-Pastor</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Cantidad</label>
+      <div class="counter">
+        <button onclick="adjustInput('mover-cantidad', -1)">−</button>
+        <input type="number" id="mover-cantidad" value="1" min="1" max="999">
+        <button onclick="adjustInput('mover-cantidad', 1)">+</button>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="guardarMover()">Mover a Heladera</button>
+  </div>
+</div>
+
+<!-- ALERTAS -->
+<div id="panel-alertas" class="panel">
+  <div class="card">
+    <div class="card-title">Estado del Stock</div>
+    <div id="alertas-list"></div>
+  </div>
+</div>
+
+<!-- HISTORIAL -->
+<div id="panel-historial" class="panel">
+  <div class="card">
+    <div class="card-title">Últimos Registros</div>
+    <div id="historial-list"></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <button class="active" onclick="showPanel('cierre', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/>
+    </svg>
+    <span>Cierre</span>
+  </button>
+  <button onclick="showPanel('compra', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5v14M5 12h14"/>
+    </svg>
+    <span>Compra</span>
+  </button>
+  <button onclick="showPanel('alertas', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    <span>Alertas</span>
+  </button>
+  <button onclick="showPanel('historial', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+    </svg>
+    <span>Historial</span>
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── PRODUCTOS ────────────────────────────────────────
+const PRODUCTOS = [
+  { id: 'leche',       nombre: 'Leche',          unidad: 'cajas x12',  min: 2, ideal: 5  },
+  { id: 'jugo_mango',  nombre: 'Jugo Mango',      unidad: 'cajas x12',  min: 1, ideal: 3  },
+  { id: 'jugo_duraz',  nombre: 'Jugo Durazno',    unidad: 'cajas x12',  min: 1, ideal: 3  },
+  { id: 'jugo_naran',  nombre: 'Jugo Naranja',    unidad: 'cajas x12',  min: 1, ideal: 3  },
+  { id: 'cafe',        nombre: 'Granos de café',  unidad: 'bolsas 3kg', min: 1, ideal: 3  },
+  { id: 'vaso240',     nombre: 'Vaso 240ml',      unidad: 'paquetes',   min: 2, ideal: 5  },
+  { id: 'vaso330',     nombre: 'Vaso 330ml',      unidad: 'paquetes',   min: 2, ideal: 5  },
+  { id: 'vaso_iced',   nombre: 'Vaso Iced',       unidad: 'paquetes',   min: 1, ideal: 3  },
+  { id: 'pajitas',     nombre: 'Pajitas',          unidad: 'paquetes',   min: 2, ideal: 4  },
+  { id: 'nesquik',     nombre: 'Nesquik',          unidad: 'bolsas',     min: 1, ideal: 3  },
+  { id: 'choco',       nombre: 'Choco en barra',  unidad: 'unidades',   min: 5, ideal: 20 },
+];
+
+// ─── PERSISTENCIA ─────────────────────────────────────
+function loadStock() {
+  try {
+    const saved = localStorage.getItem('elimcafe_stock');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  const s = {};
+  PRODUCTOS.forEach(p => { s[p.id] = { heladera: 0, deposito: 0, oficina: 0 }; });
+  return s;
+}
+
+function saveStock(s) {
+  localStorage.setItem('elimcafe_stock', JSON.stringify(s));
+}
+
+function loadHistorial() {
+  try {
+    const saved = localStorage.getItem('elimcafe_historial');
+    return saved ? JSON.parse(saved) : [];
+  } catch(e) { return []; }
+}
+
+function saveHistorial(hist) {
+  localStorage.setItem('elimcafe_historial', JSON.stringify(hist.slice(0, 20)));
+}
+
+function addHistorial(entry) {
+  const hist = loadHistorial();
+  hist.unshift({ ...entry, fecha: new Date().toISOString() });
+  saveHistorial(hist);
+}
+
+let stock = loadStock();
+
+// ─── NAVEGACIÓN ───────────────────────────────────────
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'cierre')   renderCierre();
+  if (name === 'alertas')  renderAlertas();
+  if (name === 'historial') renderHistorial();
+}
+
+// ─── HELPERS ──────────────────────────────────────────
+function adjustInput(id, delta) {
+  const el = document.getElementById(id);
+  el.value = Math.max(1, (parseInt(el.value) || 0) + delta);
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }) +
+         ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── CIERRE ───────────────────────────────────────────
+const cierreValues = {};
+
+function renderCierre() {
+  PRODUCTOS.forEach(p => {
+    if (!(p.id in cierreValues)) cierreValues[p.id] = stock[p.id].heladera;
+  });
+
+  document.getElementById('cierre-list').innerHTML = PRODUCTOS.map(p => `
+    <div class="product-row">
+      <div class="product-name">
+        ${p.nombre}
+        <span class="product-unit">${p.unidad}</span>
+      </div>
+      <div class="product-current">
+        <div style="font-size:10px">antes</div>
+        <div style="font-weight:700; color:var(--brown); font-size:16px">${stock[p.id].heladera}</div>
+      </div>
+      <div class="counter">
+        <button onclick="adjustCierre('${p.id}', -1)">−</button>
+        <input type="number" id="cierre-${p.id}" value="${cierreValues[p.id]}" min="0"
+               oninput="cierreValues['${p.id}']=Math.max(0,parseInt(this.value)||0); updateCierreNote()">
+        <button onclick="adjustCierre('${p.id}', 1)">+</button>
+      </div>
+    </div>
+  `).join('');
+
+  updateCierreNote();
+}
+
+function adjustCierre(id, delta) {
+  cierreValues[id] = Math.max(0, (cierreValues[id] || 0) + delta);
+  const el = document.getElementById('cierre-' + id);
+  if (el) el.value = cierreValues[id];
+  updateCierreNote();
+}
+
+function updateCierreNote() {
+  const consumos = PRODUCTOS
+    .map(p => {
+      const antes = stock[p.id].heladera;
+      const despues = cierreValues[p.id] ?? antes;
+      const c = antes - despues;
+      if (c > 0) return `${p.nombre}: ${c}`;
+      return null;
+    })
+    .filter(Boolean);
+
+  const note = document.getElementById('cierre-note');
+  if (consumos.length > 0) {
+    note.style.display = 'block';
+    document.getElementById('cierre-consumo-text').textContent = consumos.join(' · ');
+  } else {
+    note.style.display = 'none';
+  }
+}
+
+function guardarCierre() {
+  const cambios = [];
+  PRODUCTOS.forEach(p => {
+    const antes = stock[p.id].heladera;
+    const despues = cierreValues[p.id] ?? antes;
+    if (antes !== despues) {
+      cambios.push({ producto: p.nombre, antes, despues, consumo: antes - despues });
+      stock[p.id].heladera = despues;
+    }
+  });
+
+  if (cambios.length === 0) { showToast('Sin cambios para registrar'); return; }
+
+  saveStock(stock);
+  addHistorial({
+    tipo: 'cierre',
+    resumen: `Cierre: ${cambios.length} producto(s)`,
+    detalle: cambios.map(c => `${c.producto}: ${c.antes}→${c.despues}`).join(', '),
+  });
+
+  showToast(`✓ Cierre registrado — ${cambios.length} productos`);
+
+  // Reset cierre values to new stock
+  PRODUCTOS.forEach(p => { cierreValues[p.id] = stock[p.id].heladera; });
+  renderCierre();
+}
+
+// ─── COMPRA ───────────────────────────────────────────
+function initSelects() {
+  const opts = '<option value="">Seleccionar producto...</option>' +
+    PRODUCTOS.map(p => `<option value="${p.id}">${p.nombre} (${p.unidad})</option>`).join('');
+  document.getElementById('compra-producto').innerHTML = opts;
+  document.getElementById('mover-producto').innerHTML = opts;
+}
+
+function guardarCompra() {
+  const prodId   = document.getElementById('compra-producto').value;
+  const destino  = document.getElementById('compra-destino').value;
+  const cantidad = parseInt(document.getElementById('compra-cantidad').value) || 0;
+
+  if (!prodId)        { showToast('Seleccioná un producto'); return; }
+  if (cantidad < 1)   { showToast('Ingresá una cantidad válida'); return; }
+
+  const prod = PRODUCTOS.find(p => p.id === prodId);
+  stock[prodId][destino] += cantidad;
+  saveStock(stock);
+
+  const dest = { deposito: 'Depósito-Pasillo', oficina: 'Oficina-Pastor', heladera: 'Heladera' };
+  addHistorial({
+    tipo: 'compra',
+    resumen: `Compra: +${cantidad} ${prod.nombre}`,
+    detalle: `→ ${dest[destino]}. Total ahí: ${stock[prodId][destino]}`,
+  });
+
+  showToast(`✓ +${cantidad} ${prod.nombre} → ${dest[destino]}`);
+  document.getElementById('compra-cantidad').value = 1;
+  document.getElementById('compra-producto').value = '';
+}
+
+function guardarMover() {
+  const prodId   = document.getElementById('mover-producto').value;
+  const origen   = document.getElementById('mover-origen').value;
+  const cantidad = parseInt(document.getElementById('mover-cantidad').value) || 0;
+
+  if (!prodId)        { showToast('Seleccioná un producto'); return; }
+  if (cantidad < 1)   { showToast('Ingresá una cantidad válida'); return; }
+
+  const prod       = PRODUCTOS.find(p => p.id === prodId);
+  const disponible = stock[prodId][origen];
+
+  if (cantidad > disponible) {
+    showToast(`Solo hay ${disponible} en ${origen === 'deposito' ? 'Depósito' : 'Oficina'}`);
+    return;
+  }
+
+  stock[prodId][origen]    -= cantidad;
+  stock[prodId].heladera   += cantidad;
+  saveStock(stock);
+
+  const orig = { deposito: 'Depósito-Pasillo', oficina: 'Oficina-Pastor' };
+  addHistorial({
+    tipo: 'mover',
+    resumen: `Movido: ${cantidad} ${prod.nombre} → Heladera`,
+    detalle: `Desde ${orig[origen]}`,
+  });
+
+  showToast(`✓ ${cantidad} ${prod.nombre} → Heladera`);
+  document.getElementById('mover-cantidad').value = 1;
+  document.getElementById('mover-producto').value = '';
+}
+
+// ─── ALERTAS ──────────────────────────────────────────
+function getStatus(prod) {
+  const total = stock[prod.id].heladera + stock[prod.id].deposito + stock[prod.id].oficina;
+  if (total <= prod.min)  return 'danger';
+  if (total < prod.ideal) return 'warn';
+  return 'ok';
+}
+
+function renderAlertas() {
+  const order = { danger: 0, warn: 1, ok: 2 };
+  const sorted = [...PRODUCTOS].sort((a, b) => order[getStatus(a)] - order[getStatus(b)]);
+  const label  = { ok: 'OK', warn: 'Bajo', danger: 'Urgente' };
+
+  document.getElementById('alertas-list').innerHTML = sorted.map(p => {
+    const status = getStatus(p);
+    const s      = stock[p.id];
+    const total  = s.heladera + s.deposito + s.oficina;
+    const parts  = [];
+    if (s.heladera > 0) parts.push(`Hel: ${s.heladera}`);
+    if (s.deposito > 0) parts.push(`Dep: ${s.deposito}`);
+    if (s.oficina  > 0) parts.push(`Ofi: ${s.oficina}`);
+    const loc = parts.length ? parts.join(' · ') : 'Sin stock';
+
+    return `
+      <div class="alert-item ${status}">
+        <div class="alert-dot"></div>
+        <div class="alert-info">
+          <div class="alert-name">${p.nombre}</div>
+          <div class="alert-detail">Total: <strong>${total}</strong> ${p.unidad} &nbsp;·&nbsp; Mín: ${p.min} &nbsp;·&nbsp; Ideal: ${p.ideal}</div>
+          <div class="alert-detail" style="margin-top:3px">${loc}</div>
+        </div>
+        <div class="alert-status">${label[status]}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─── HISTORIAL ────────────────────────────────────────
+function renderHistorial() {
+  const hist  = loadHistorial();
+  const icons = { cierre: '📋', compra: '🛒', mover: '↗️' };
+
+  if (hist.length === 0) {
+    document.getElementById('historial-list').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">📭</div>
+        <div class="empty-text">No hay registros todavía</div>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('historial-list').innerHTML = hist.map(h => `
+    <div class="hist-item">
+      <div class="hist-icon ${h.tipo}">${icons[h.tipo] || '📄'}</div>
+      <div class="hist-body">
+        <div class="hist-title">${h.resumen}</div>
+        <div class="hist-sub">${h.detalle || ''}</div>
+      </div>
+      <div class="hist-date">${formatDate(h.fecha)}</div>
+    </div>
+  `).join('');
+}
+
+// ─── INIT ─────────────────────────────────────────────
+document.getElementById('header-date').textContent =
+  new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+initSelects();
+renderCierre();
+renderAlertas();
+</script>
+</body>
+</html>
