@@ -669,7 +669,7 @@ function initCompraValues() {
 function buildCompraRows(prods, locs, unitLabel) {
   return locs.map(loc => `
     <div class="loc-group">
-      <div class="loc-header">${loc === 'deposito' ? 'Pasillo (Arriba)' : 'Oficina (Abajo)'}</div>
+      <div class="loc-header">${loc === 'deposito' ? 'Pasillo' : 'Oficina'}</div>
       ${prods.map(p => {
         const val  = compraValues[p.id]?.[loc] || 0;
         const unit = unitLabel || p.unidad || '';
