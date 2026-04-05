@@ -195,6 +195,14 @@
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* ── Cierre row ── */
+    .cierre-antes { text-align: center; min-width: 42px; flex-shrink: 0; }
+    .cierre-antes span { display: block; font-size: 10px; color: var(--text-muted); }
+    .cierre-antes strong { font-size: 16px; color: var(--brown); font-weight: 700; }
+    .cierre-result { font-size: 15px; font-weight: 700; min-width: 28px; text-align: center; flex-shrink: 0; }
+    .counter input.neg { color: var(--danger); border-color: var(--danger); }
+    .counter input.pos { color: var(--ok);     border-color: var(--ok);     }
+
     /* ── Email Modal ── */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.55);
@@ -501,11 +509,7 @@ function getAlertItems() {
 // ─── CIERRE ───────────────────────────────────────────
 function initCierreValues() {
   PRODUCTOS.forEach(p => {
-    cierreValues[p.id] = {
-      heladera: stock[p.id]?.heladera || 0,
-      deposito: stock[p.id]?.deposito || 0,
-      oficina:  stock[p.id]?.oficina  || 0,
-    };
+    cierreValues[p.id] = { heladera: 0, deposito: 0, oficina: 0 };
   });
 }
 
@@ -515,20 +519,24 @@ function buildCierreRows(prods, locs, unitLabel) {
       <div class="loc-header">${loc === 'heladera' ? 'Heladera' : loc === 'deposito' ? 'Pasillo' : 'Oficina'}</div>
       ${prods.map(p => {
         const antes = stock[p.id]?.[loc] || 0;
-        const val   = cierreValues[p.id]?.[loc] ?? antes;
-        const unit  = unitLabel || p.unidad || '';
+        const delta = cierreValues[p.id]?.[loc] ?? 0;
+        const result = Math.max(0, antes + delta);
+        const unit   = unitLabel || p.unidad || '';
+        const cls    = delta < 0 ? 'neg' : delta > 0 ? 'pos' : '';
         return `
           <div class="compact-row">
             <div class="compact-name">
               ${p.nombre}
-              <span class="compact-before">antes: ${antes} ${unit}</span>
+              <span class="compact-before">${unit}</span>
             </div>
+            <div class="cierre-antes"><span>antes</span><strong>${antes}</strong></div>
             <div class="counter">
               <button onclick="adjustCierre('${p.id}','${loc}',-1)">−</button>
-              <input type="number" id="cierre-${p.id}-${loc}" value="${val}" min="0"
+              <input type="number" id="cierre-${p.id}-${loc}" value="${delta}" class="${cls}"
                      oninput="setCierreValue('${p.id}','${loc}',this.value)">
               <button onclick="adjustCierre('${p.id}','${loc}',1)">+</button>
             </div>
+            <div class="cierre-result" id="cierre-result-${p.id}-${loc}">${result}</div>
           </div>`;
       }).join('')}
     </div>
@@ -570,19 +578,30 @@ function renderCierre() {
 
 function adjustCierre(prodId, loc, delta) {
   if (!cierreValues[prodId]) cierreValues[prodId] = { heladera:0, deposito:0, oficina:0 };
-  cierreValues[prodId][loc] = Math.max(0, (cierreValues[prodId][loc] || 0) + delta);
-  const el = document.getElementById(`cierre-${prodId}-${loc}`);
-  if (el) el.value = cierreValues[prodId][loc];
+  const antes   = stock[prodId]?.[loc] || 0;
+  const current = cierreValues[prodId][loc] || 0;
+  cierreValues[prodId][loc] = Math.max(-antes, current + delta);
+  _syncCierreUI(prodId, loc, antes);
   updateCierreNote();
 }
 window.adjustCierre = adjustCierre;
 
 function setCierreValue(prodId, loc, val) {
   if (!cierreValues[prodId]) cierreValues[prodId] = { heladera:0, deposito:0, oficina:0 };
-  cierreValues[prodId][loc] = Math.max(0, parseInt(val) || 0);
+  const antes = stock[prodId]?.[loc] || 0;
+  cierreValues[prodId][loc] = Math.max(-antes, parseInt(val) || 0);
+  _syncCierreUI(prodId, loc, antes);
   updateCierreNote();
 }
 window.setCierreValue = setCierreValue;
+
+function _syncCierreUI(prodId, loc, antes) {
+  const d       = cierreValues[prodId][loc] || 0;
+  const input   = document.getElementById(`cierre-${prodId}-${loc}`);
+  const resultEl = document.getElementById(`cierre-result-${prodId}-${loc}`);
+  if (input)    { input.value = d; input.className = d < 0 ? 'neg' : d > 0 ? 'pos' : ''; }
+  if (resultEl) { resultEl.textContent = Math.max(0, antes + d); }
+}
 
 function updateCierreNote() {
   const note = document.getElementById('cierre-note');
@@ -591,12 +610,9 @@ function updateCierreNote() {
   PRODUCTOS.forEach(p => {
     const locs = PACK_PRODS.has(p.id) ? ['heladera','deposito','oficina'] : ['deposito','oficina'];
     locs.forEach(loc => {
-      const antes   = stock[p.id]?.[loc] || 0;
-      const despues = cierreValues[p.id]?.[loc] ?? antes;
-      const delta   = despues - antes;
+      const delta = cierreValues[p.id]?.[loc] || 0;
       if (delta !== 0) {
-        const sign = delta > 0 ? `+${delta}` : `${delta}`;
-        diffs.push(`${p.nombre} [${LOC_LABELS[loc]}]: ${sign}`);
+        diffs.push(`${p.nombre} [${LOC_LABELS[loc]}]: ${delta > 0 ? '+' : ''}${delta}`);
       }
     });
   });
@@ -613,9 +629,10 @@ function guardarCierre() {
   PRODUCTOS.forEach(p => {
     const locs = PACK_PRODS.has(p.id) ? ['heladera','deposito','oficina'] : ['deposito','oficina'];
     locs.forEach(loc => {
-      const antes   = stock[p.id]?.[loc] || 0;
-      const despues = cierreValues[p.id]?.[loc] ?? antes;
-      if (antes !== despues) {
+      const delta = cierreValues[p.id]?.[loc] || 0;
+      if (delta !== 0) {
+        const antes   = stock[p.id]?.[loc] || 0;
+        const despues = Math.max(0, antes + delta);
         cambios.push({ nombre: p.nombre, loc, antes, despues });
         stock[p.id][loc] = despues;
       }
