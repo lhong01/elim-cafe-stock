@@ -8,7 +8,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --brown: #6B3A2A;
-      --brown-light: #8B5E4A;
       --gold: #C8923A;
       --cream: #FFF8F0;
       --bg: #F5EDE4;
@@ -33,36 +32,50 @@
       padding-bottom: 70px;
     }
 
+    /* Loading overlay */
+    #loading-overlay {
+      position: fixed; inset: 0;
+      background: var(--brown);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px;
+      z-index: 1000;
+      transition: opacity 0.4s;
+    }
+    #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+    #loading-overlay .icon { font-size: 40px; }
+    #loading-overlay .msg { color: white; font-size: 14px; opacity: 0.8; }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     header {
       background: var(--brown);
       color: white;
       padding: 16px 20px 12px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      position: sticky; top: 0; z-index: 100;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
-    header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.3px; }
-    header p { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+    header h1 { font-size: 18px; font-weight: 700; }
+    header p  { font-size: 12px; opacity: 0.75; margin-top: 2px; }
 
     nav {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
+      position: fixed; bottom: 0; left: 0; right: 0;
       background: white;
       border-top: 1px solid var(--border);
-      display: flex;
-      z-index: 100;
+      display: flex; z-index: 100;
       box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
     }
     nav button {
-      flex: 1;
-      border: none;
-      background: none;
+      flex: 1; border: none; background: none;
       padding: 10px 4px 8px;
       display: flex; flex-direction: column; align-items: center; gap: 3px;
-      cursor: pointer;
-      color: var(--text-muted);
-      font-size: 10px;
+      cursor: pointer; color: var(--text-muted); font-size: 10px;
       transition: color 0.15s;
     }
     nav button.active { color: var(--brown); }
@@ -73,227 +86,139 @@
     .panel.active { display: block; }
 
     .card {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 10px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
+      background: var(--card); border-radius: 12px;
+      padding: 16px; margin-bottom: 10px;
+      box-shadow: var(--shadow); border: 1px solid var(--border);
     }
-
     .card-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--brown);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 14px;
+      font-size: 13px; font-weight: 700; color: var(--brown);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
     }
 
     .product-row {
-      display: flex;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-      gap: 10px;
+      display: flex; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--border); gap: 10px;
     }
     .product-row:last-child { border-bottom: none; padding-bottom: 0; }
     .product-row:first-child { padding-top: 0; }
+    .product-name { flex: 1; font-size: 14px; font-weight: 500; }
+    .product-unit { font-size: 11px; color: var(--text-muted); display: block; }
+    .product-current { font-size: 11px; color: var(--text-muted); text-align: center; min-width: 45px; }
 
-    .product-name {
-      flex: 1;
-      font-size: 14px;
-      font-weight: 500;
-    }
-    .product-unit {
-      font-size: 11px;
-      color: var(--text-muted);
-      display: block;
-    }
-
-    .product-current {
-      font-size: 11px;
-      color: var(--text-muted);
-      text-align: center;
-      min-width: 45px;
-    }
-
-    .counter {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+    .counter { display: flex; align-items: center; gap: 6px; }
     .counter button {
-      width: 34px; height: 34px;
-      border-radius: 8px;
-      border: 1.5px solid var(--border);
-      background: var(--cream);
-      font-size: 18px;
-      line-height: 1;
-      cursor: pointer;
+      width: 34px; height: 34px; border-radius: 8px;
+      border: 1.5px solid var(--border); background: var(--cream);
+      font-size: 18px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      color: var(--brown);
-      font-weight: 700;
-      transition: background 0.1s;
+      color: var(--brown); font-weight: 700; transition: background 0.1s;
     }
     .counter button:active { background: var(--border); }
     .counter input {
-      width: 46px;
-      text-align: center;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      padding: 6px 4px;
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text);
-      background: white;
+      width: 46px; text-align: center;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 6px 4px; font-size: 16px; font-weight: 600;
+      color: var(--text); background: white;
     }
     .counter input:focus { outline: none; border-color: var(--brown); }
 
     .btn {
-      display: block;
-      width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.15s, transform 0.1s;
-      text-align: center;
+      display: block; width: 100%; padding: 14px; border: none;
+      border-radius: 12px; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: opacity 0.15s, transform 0.1s;
     }
     .btn:active { opacity: 0.85; transform: scale(0.98); }
-    .btn-primary { background: var(--brown); color: white; }
-    .btn-secondary { background: var(--gold); color: white; }
+    .btn-primary  { background: var(--brown); color: white; }
+    .btn-secondary { background: var(--gold);  color: white; }
 
     .form-group { margin-bottom: 14px; }
     .form-group label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-      margin-bottom: 6px;
+      display: block; font-size: 12px; font-weight: 600;
+      color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.4px; margin-bottom: 6px;
     }
     .form-group select,
     .form-group input[type="number"] {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      font-size: 15px;
-      background: white;
-      color: var(--text);
-      appearance: none;
-      -webkit-appearance: none;
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 15px; background: white; color: var(--text);
+      appearance: none; -webkit-appearance: none;
     }
     .form-group select:focus,
-    .form-group input[type="number"]:focus {
-      outline: none;
-      border-color: var(--brown);
-    }
+    .form-group input[type="number"]:focus { outline: none; border-color: var(--brown); }
 
     .alert-item {
-      display: flex;
-      align-items: center;
-      padding: 12px;
-      border-radius: 10px;
-      margin-bottom: 8px;
-      gap: 12px;
+      display: flex; align-items: center;
+      padding: 12px; border-radius: 10px; margin-bottom: 8px; gap: 12px;
     }
     .alert-item:last-child { margin-bottom: 0; }
-    .alert-item.ok { background: var(--ok-bg); }
-    .alert-item.warn { background: var(--warn-bg); }
+    .alert-item.ok     { background: var(--ok-bg);     }
+    .alert-item.warn   { background: var(--warn-bg);   }
     .alert-item.danger { background: var(--danger-bg); }
-
-    .alert-dot {
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .ok .alert-dot { background: var(--ok); }
-    .warn .alert-dot { background: var(--warn); }
+    .alert-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .ok     .alert-dot { background: var(--ok);     }
+    .warn   .alert-dot { background: var(--warn);   }
     .danger .alert-dot { background: var(--danger); }
-
     .alert-info { flex: 1; min-width: 0; }
-    .alert-name { font-size: 14px; font-weight: 600; }
+    .alert-name   { font-size: 14px; font-weight: 600; }
     .alert-detail { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-
     .alert-status {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 20px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      flex-shrink: 0;
+      font-size: 11px; font-weight: 700; padding: 3px 8px;
+      border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;
     }
-    .ok .alert-status { color: var(--ok); background: rgba(45,155,111,0.15); }
-    .warn .alert-status { color: var(--warn); background: rgba(200,120,32,0.15); }
-    .danger .alert-status { color: var(--danger); background: rgba(192,48,48,0.15); }
+    .ok     .alert-status { color: var(--ok);     background: rgba(45,155,111,0.15); }
+    .warn   .alert-status { color: var(--warn);   background: rgba(200,120,32,0.15); }
+    .danger .alert-status { color: var(--danger); background: rgba(192,48,48,0.15);  }
 
     .hist-item {
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      display: flex; gap: 10px; align-items: flex-start;
     }
     .hist-item:last-child { border-bottom: none; }
     .hist-icon {
-      width: 32px; height: 32px;
-      border-radius: 8px;
+      width: 32px; height: 32px; border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
-      flex-shrink: 0;
+      font-size: 16px; flex-shrink: 0;
     }
     .hist-icon.cierre { background: #E8F0FD; }
     .hist-icon.compra { background: #E8F7F1; }
     .hist-icon.mover  { background: #FDF3E3; }
-    .hist-body { flex: 1; min-width: 0; }
+    .hist-body  { flex: 1; min-width: 0; }
     .hist-title { font-size: 13px; font-weight: 600; }
-    .hist-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; word-break: break-word; }
-    .hist-date { font-size: 11px; color: var(--text-muted); flex-shrink: 0; text-align: right; min-width: 56px; }
+    .hist-sub   { font-size: 12px; color: var(--text-muted); margin-top: 2px; word-break: break-word; }
+    .hist-date  { font-size: 11px; color: var(--text-muted); flex-shrink: 0; text-align: right; min-width: 56px; }
 
     .toast {
-      position: fixed;
-      bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
-      background: #2C1810;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 500;
-      opacity: 0;
-      transition: opacity 0.3s, transform 0.3s;
-      z-index: 200;
-      white-space: nowrap;
-      pointer-events: none;
+      position: fixed; bottom: 80px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #2C1810; color: white;
+      padding: 10px 20px; border-radius: 20px;
+      font-size: 13px; font-weight: 500;
+      opacity: 0; transition: opacity 0.3s, transform 0.3s;
+      z-index: 200; white-space: nowrap; pointer-events: none;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     .consumption-note {
-      font-size: 12px;
-      color: var(--text-muted);
-      background: var(--bg);
-      padding: 8px 12px;
-      border-radius: 8px;
-      margin-top: 14px;
-      line-height: 1.5;
+      font-size: 12px; color: var(--text-muted);
+      background: var(--bg); padding: 8px 12px;
+      border-radius: 8px; margin-top: 14px; line-height: 1.5;
     }
     .consumption-note strong { color: var(--danger); }
 
-    .empty {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-muted);
-    }
+    .empty { text-align: center; padding: 40px 20px; color: var(--text-muted); }
     .empty-icon { font-size: 40px; margin-bottom: 10px; }
     .empty-text { font-size: 14px; }
   </style>
 </head>
 <body>
+
+<!-- Loading -->
+<div id="loading-overlay">
+  <div class="icon">☕</div>
+  <div class="spinner"></div>
+  <div class="msg">Cargando stock...</div>
+</div>
 
 <header>
   <h1>☕ ELIM Café — Stock</h1>
@@ -417,7 +342,24 @@
 
 <div class="toast" id="toast"></div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, push, query, limitToLast } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+// ─── FIREBASE ─────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyAIGSS2hM_LRxFnhzJu59_UVXpQgL-PTzc",
+  authDomain: "elim-cafe-stock.firebaseapp.com",
+  databaseURL: "https://elim-cafe-stock-default-rtdb.firebaseio.com",
+  projectId: "elim-cafe-stock",
+  storageBucket: "elim-cafe-stock.firebasestorage.app",
+  messagingSenderId: "49096842793",
+  appId: "1:49096842793:web:28d354718db3d533980638"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
 // ─── PRODUCTOS ────────────────────────────────────────
 const PRODUCTOS = [
   { id: 'leche',       nombre: 'Leche',          unidad: 'cajas x12',  min: 2, ideal: 5  },
@@ -433,39 +375,70 @@ const PRODUCTOS = [
   { id: 'choco',       nombre: 'Choco en barra',  unidad: 'unidades',   min: 5, ideal: 20 },
 ];
 
-// ─── PERSISTENCIA ─────────────────────────────────────
-function loadStock() {
-  try {
-    const saved = localStorage.getItem('elimcafe_stock');
-    if (saved) return JSON.parse(saved);
-  } catch(e) {}
+// ─── ESTADO ───────────────────────────────────────────
+function defaultStock() {
   const s = {};
   PRODUCTOS.forEach(p => { s[p.id] = { heladera: 0, deposito: 0, oficina: 0 }; });
   return s;
 }
 
+let stock = defaultStock();
+let historial = [];
+const cierreValues = {};
+let appReady = false;
+
+// ─── FIREBASE LISTENERS ───────────────────────────────
+onValue(ref(db, 'stock'), (snapshot) => {
+  const data = snapshot.val() || {};
+  // Merge con defaults (por si hay productos nuevos)
+  PRODUCTOS.forEach(p => {
+    stock[p.id] = { heladera: 0, deposito: 0, oficina: 0, ...(data[p.id] || {}) };
+  });
+
+  if (!appReady) {
+    appReady = true;
+    // Inicializar cierre con valores actuales
+    PRODUCTOS.forEach(p => { cierreValues[p.id] = stock[p.id].heladera; });
+    hideLoading();
+  }
+
+  // Actualizar panel activo (sin pisar cierre en edición)
+  const active = document.querySelector('.panel.active')?.id;
+  if (active === 'panel-alertas') renderAlertas();
+});
+
+onValue(query(ref(db, 'historial'), limitToLast(20)), (snapshot) => {
+  historial = [];
+  snapshot.forEach(child => historial.unshift(child.val()));
+  if (document.getElementById('panel-historial').classList.contains('active')) {
+    renderHistorial();
+  }
+});
+
 function saveStock(s) {
-  localStorage.setItem('elimcafe_stock', JSON.stringify(s));
-}
-
-function loadHistorial() {
-  try {
-    const saved = localStorage.getItem('elimcafe_historial');
-    return saved ? JSON.parse(saved) : [];
-  } catch(e) { return []; }
-}
-
-function saveHistorial(hist) {
-  localStorage.setItem('elimcafe_historial', JSON.stringify(hist.slice(0, 20)));
+  set(ref(db, 'stock'), s);
 }
 
 function addHistorial(entry) {
-  const hist = loadHistorial();
-  hist.unshift({ ...entry, fecha: new Date().toISOString() });
-  saveHistorial(hist);
+  push(ref(db, 'historial'), { ...entry, fecha: new Date().toISOString() });
 }
 
-let stock = loadStock();
+// ─── LOADING ──────────────────────────────────────────
+function hideLoading() {
+  const overlay = document.getElementById('loading-overlay');
+  overlay.classList.add('hidden');
+  setTimeout(() => overlay.style.display = 'none', 400);
+  initSelects();
+  renderCierre();
+  renderAlertas();
+}
+
+// Timeout de seguridad (sin conexión)
+setTimeout(() => {
+  if (!appReady) {
+    document.querySelector('#loading-overlay .msg').textContent = 'Sin conexión — revisá el Wi-Fi';
+  }
+}, 8000);
 
 // ─── NAVEGACIÓN ───────────────────────────────────────
 function showPanel(name, btn) {
@@ -473,16 +446,18 @@ function showPanel(name, btn) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
   btn.classList.add('active');
-  if (name === 'cierre')   renderCierre();
-  if (name === 'alertas')  renderAlertas();
+  if (name === 'cierre')    renderCierre();
+  if (name === 'alertas')   renderAlertas();
   if (name === 'historial') renderHistorial();
 }
+window.showPanel = showPanel;
 
 // ─── HELPERS ──────────────────────────────────────────
 function adjustInput(id, delta) {
   const el = document.getElementById(id);
   el.value = Math.max(1, (parseInt(el.value) || 0) + delta);
 }
+window.adjustInput = adjustInput;
 
 function formatDate(iso) {
   const d = new Date(iso);
@@ -500,13 +475,7 @@ function showToast(msg) {
 }
 
 // ─── CIERRE ───────────────────────────────────────────
-const cierreValues = {};
-
 function renderCierre() {
-  PRODUCTOS.forEach(p => {
-    if (!(p.id in cierreValues)) cierreValues[p.id] = stock[p.id].heladera;
-  });
-
   document.getElementById('cierre-list').innerHTML = PRODUCTOS.map(p => `
     <div class="product-row">
       <div class="product-name">
@@ -519,31 +488,34 @@ function renderCierre() {
       </div>
       <div class="counter">
         <button onclick="adjustCierre('${p.id}', -1)">−</button>
-        <input type="number" id="cierre-${p.id}" value="${cierreValues[p.id]}" min="0"
-               oninput="cierreValues['${p.id}']=Math.max(0,parseInt(this.value)||0); updateCierreNote()">
+        <input type="number" id="cierre-${p.id}" value="${cierreValues[p.id] ?? stock[p.id].heladera}" min="0"
+               oninput="updateCierreValue('${p.id}', this.value)">
         <button onclick="adjustCierre('${p.id}', 1)">+</button>
       </div>
     </div>
   `).join('');
-
   updateCierreNote();
 }
 
 function adjustCierre(id, delta) {
-  cierreValues[id] = Math.max(0, (cierreValues[id] || 0) + delta);
+  cierreValues[id] = Math.max(0, (cierreValues[id] ?? stock[id]?.heladera ?? 0) + delta);
   const el = document.getElementById('cierre-' + id);
   if (el) el.value = cierreValues[id];
   updateCierreNote();
 }
+window.adjustCierre = adjustCierre;
+
+function updateCierreValue(id, val) {
+  cierreValues[id] = Math.max(0, parseInt(val) || 0);
+  updateCierreNote();
+}
+window.updateCierreValue = updateCierreValue;
 
 function updateCierreNote() {
   const consumos = PRODUCTOS
     .map(p => {
-      const antes = stock[p.id].heladera;
-      const despues = cierreValues[p.id] ?? antes;
-      const c = antes - despues;
-      if (c > 0) return `${p.nombre}: ${c}`;
-      return null;
+      const c = stock[p.id].heladera - (cierreValues[p.id] ?? stock[p.id].heladera);
+      return c > 0 ? `${p.nombre}: ${c}` : null;
     })
     .filter(Boolean);
 
@@ -559,10 +531,10 @@ function updateCierreNote() {
 function guardarCierre() {
   const cambios = [];
   PRODUCTOS.forEach(p => {
-    const antes = stock[p.id].heladera;
+    const antes   = stock[p.id].heladera;
     const despues = cierreValues[p.id] ?? antes;
     if (antes !== despues) {
-      cambios.push({ producto: p.nombre, antes, despues, consumo: antes - despues });
+      cambios.push({ producto: p.nombre, antes, despues });
       stock[p.id].heladera = despues;
     }
   });
@@ -576,19 +548,18 @@ function guardarCierre() {
     detalle: cambios.map(c => `${c.producto}: ${c.antes}→${c.despues}`).join(', '),
   });
 
-  showToast(`✓ Cierre registrado — ${cambios.length} productos`);
-
-  // Reset cierre values to new stock
   PRODUCTOS.forEach(p => { cierreValues[p.id] = stock[p.id].heladera; });
+  showToast(`✓ Cierre registrado — ${cambios.length} productos`);
   renderCierre();
 }
+window.guardarCierre = guardarCierre;
 
 // ─── COMPRA ───────────────────────────────────────────
 function initSelects() {
   const opts = '<option value="">Seleccionar producto...</option>' +
     PRODUCTOS.map(p => `<option value="${p.id}">${p.nombre} (${p.unidad})</option>`).join('');
   document.getElementById('compra-producto').innerHTML = opts;
-  document.getElementById('mover-producto').innerHTML = opts;
+  document.getElementById('mover-producto').innerHTML  = opts;
 }
 
 function guardarCompra() {
@@ -596,8 +567,8 @@ function guardarCompra() {
   const destino  = document.getElementById('compra-destino').value;
   const cantidad = parseInt(document.getElementById('compra-cantidad').value) || 0;
 
-  if (!prodId)        { showToast('Seleccioná un producto'); return; }
-  if (cantidad < 1)   { showToast('Ingresá una cantidad válida'); return; }
+  if (!prodId)      { showToast('Seleccioná un producto'); return; }
+  if (cantidad < 1) { showToast('Ingresá una cantidad válida'); return; }
 
   const prod = PRODUCTOS.find(p => p.id === prodId);
   stock[prodId][destino] += cantidad;
@@ -614,14 +585,15 @@ function guardarCompra() {
   document.getElementById('compra-cantidad').value = 1;
   document.getElementById('compra-producto').value = '';
 }
+window.guardarCompra = guardarCompra;
 
 function guardarMover() {
   const prodId   = document.getElementById('mover-producto').value;
   const origen   = document.getElementById('mover-origen').value;
   const cantidad = parseInt(document.getElementById('mover-cantidad').value) || 0;
 
-  if (!prodId)        { showToast('Seleccioná un producto'); return; }
-  if (cantidad < 1)   { showToast('Ingresá una cantidad válida'); return; }
+  if (!prodId)      { showToast('Seleccioná un producto'); return; }
+  if (cantidad < 1) { showToast('Ingresá una cantidad válida'); return; }
 
   const prod       = PRODUCTOS.find(p => p.id === prodId);
   const disponible = stock[prodId][origen];
@@ -631,8 +603,8 @@ function guardarMover() {
     return;
   }
 
-  stock[prodId][origen]    -= cantidad;
-  stock[prodId].heladera   += cantidad;
+  stock[prodId][origen]  -= cantidad;
+  stock[prodId].heladera += cantidad;
   saveStock(stock);
 
   const orig = { deposito: 'Depósito-Pasillo', oficina: 'Oficina-Pastor' };
@@ -646,6 +618,7 @@ function guardarMover() {
   document.getElementById('mover-cantidad').value = 1;
   document.getElementById('mover-producto').value = '';
 }
+window.guardarMover = guardarMover;
 
 // ─── ALERTAS ──────────────────────────────────────────
 function getStatus(prod) {
@@ -656,7 +629,7 @@ function getStatus(prod) {
 }
 
 function renderAlertas() {
-  const order = { danger: 0, warn: 1, ok: 2 };
+  const order  = { danger: 0, warn: 1, ok: 2 };
   const sorted = [...PRODUCTOS].sort((a, b) => order[getStatus(a)] - order[getStatus(b)]);
   const label  = { ok: 'OK', warn: 'Bajo', danger: 'Urgente' };
 
@@ -679,17 +652,15 @@ function renderAlertas() {
           <div class="alert-detail" style="margin-top:3px">${loc}</div>
         </div>
         <div class="alert-status">${label[status]}</div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
 
 // ─── HISTORIAL ────────────────────────────────────────
 function renderHistorial() {
-  const hist  = loadHistorial();
   const icons = { cierre: '📋', compra: '🛒', mover: '↗️' };
 
-  if (hist.length === 0) {
+  if (historial.length === 0) {
     document.getElementById('historial-list').innerHTML = `
       <div class="empty">
         <div class="empty-icon">📭</div>
@@ -698,7 +669,7 @@ function renderHistorial() {
     return;
   }
 
-  document.getElementById('historial-list').innerHTML = hist.map(h => `
+  document.getElementById('historial-list').innerHTML = historial.map(h => `
     <div class="hist-item">
       <div class="hist-icon ${h.tipo}">${icons[h.tipo] || '📄'}</div>
       <div class="hist-body">
@@ -713,10 +684,6 @@ function renderHistorial() {
 // ─── INIT ─────────────────────────────────────────────
 document.getElementById('header-date').textContent =
   new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
-initSelects();
-renderCierre();
-renderAlertas();
 </script>
 </body>
 </html>
