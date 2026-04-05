@@ -419,9 +419,7 @@ onValue(ref(db, 'stock'), (snapshot) => {
 onValue(query(ref(db, 'historial'), limitToLast(20)), (snapshot) => {
   historial = [];
   snapshot.forEach(child => historial.unshift(child.val()));
-  if (document.getElementById('panel-historial').classList.contains('active')) {
-    renderHistorial();
-  }
+  renderHistorial();
 });
 
 function saveStock() {
@@ -630,7 +628,7 @@ function guardarCierre() {
   addHistorial({
     tipo: 'cierre',
     resumen: `Cierre: ${cambios.length} cambio(s)`,
-    detalle: cambios.map(c => `${c.nombre} [${LOC_LABELS[c.loc]}]: ${c.antes}→${c.despues}`).join(', '),
+    detalle: cambios.map(c => `${c.nombre} [${LOC_LABELS[c.loc]}]: antes ${c.antes} → ahora ${c.despues}`).join('\n'),
   });
 
   // Reset cierre values to new stock
@@ -763,7 +761,7 @@ function guardarCompra() {
   addHistorial({
     tipo: 'compra',
     resumen: `Compra: ${cambios.length} producto(s)`,
-    detalle: cambios.map(c => `${c.nombre} [${c.loc === 'deposito' ? 'Pasillo' : 'Oficina'}]: ${c.label}`).join(', '),
+    detalle: cambios.map(c => `${c.nombre} [${c.loc === 'deposito' ? 'Pasillo' : 'Oficina'}]: ${c.label}`).join('\n'),
   });
 
   initCompraValues();
@@ -870,7 +868,7 @@ function renderHistorial() {
       <div class="hist-icon ${h.tipo || 'cierre'}">${icons[h.tipo] || '📄'}</div>
       <div class="hist-body">
         <div class="hist-title">${h.resumen || ''}</div>
-        <div class="hist-sub">${h.detalle || ''}</div>
+        <div class="hist-sub">${(h.detalle || '').split('\n').join('<br>')}</div>
       </div>
       <div class="hist-date">${h.fecha ? formatDate(h.fecha) : ''}</div>
     </div>
