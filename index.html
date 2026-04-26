@@ -241,6 +241,24 @@
       margin-top: 12px; line-height: 1.6;
     }
     .add-note strong { color: var(--ok); }
+
+    /* ── Cierre reminder ── */
+    .cierre-reminder {
+      background: var(--warn-bg); border: 1.5px solid var(--warn);
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 12px;
+      font-size: 15px; font-weight: 700; color: var(--warn);
+      text-align: center; line-height: 1.5;
+    }
+
+    /* ── Inventario ── */
+    .inv-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .inv-row:last-child { border-bottom: none; }
+    .inv-name { font-size: 14px; font-weight: 500; }
+    .inv-val { font-size: 18px; font-weight: 700; color: var(--brown); text-align: right; }
+    .inv-sub { font-size: 12px; font-weight: 400; color: var(--text-muted); }
   </style>
 </head>
 <body>
@@ -284,6 +302,11 @@
   </div>
 </div>
 
+<!-- INVENTARIO -->
+<div id="panel-inventario" class="panel">
+  <div id="inventario-content"></div>
+</div>
+
 <!-- EMAIL MODAL -->
 <div id="email-modal" class="modal-overlay" style="display:none">
   <div class="modal-box">
@@ -325,6 +348,12 @@
       <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
     </svg>
     <span>Historial</span>
+  </button>
+  <button onclick="showPanel('inventario', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+    </svg>
+    <span>Inventario</span>
   </button>
 </nav>
 
@@ -421,7 +450,8 @@ onValue(ref(db, 'stock'), (snapshot) => {
   }
 
   const active = document.querySelector('.panel.active')?.id;
-  if (active === 'panel-alertas') renderAlertas();
+  if (active === 'panel-alertas')     renderAlertas();
+  if (active === 'panel-inventario')  renderInventario();
 });
 
 onValue(query(ref(db, 'historial'), limitToLast(20)), (snapshot) => {
@@ -461,10 +491,11 @@ function showPanel(name, btn) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
   btn.classList.add('active');
-  if (name === 'cierre')    renderCierre();
-  if (name === 'compra')    renderCompra();
-  if (name === 'alertas')   renderAlertas();
-  if (name === 'historial') renderHistorial();
+  if (name === 'cierre')      renderCierre();
+  if (name === 'compra')      renderCompra();
+  if (name === 'alertas')     renderAlertas();
+  if (name === 'historial')   renderHistorial();
+  if (name === 'inventario')  renderInventario();
 }
 window.showPanel = showPanel;
 
@@ -513,10 +544,11 @@ function initCierreValues() {
   });
 }
 
-function buildCierreRows(prods, locs, unitLabel) {
+function buildCierreRows(prods, locs, unitLabel, locLabels) {
+  locLabels = locLabels || { heladera: 'Heladera', deposito: 'Pasillo', oficina: 'Oficina' };
   return locs.map(loc => `
     <div class="loc-group">
-      <div class="loc-header">${loc === 'heladera' ? 'Heladera' : loc === 'deposito' ? 'Pasillo' : 'Oficina'}</div>
+      <div class="loc-header">${locLabels[loc] || loc}</div>
       ${prods.map(p => {
         const antes = stock[p.id]?.[loc] || 0;
         const delta = cierreValues[p.id]?.[loc] ?? 0;
@@ -557,6 +589,9 @@ function renderCierre() {
   });
 
   document.getElementById('cierre-content').innerHTML = `
+    <div class="cierre-reminder">
+      🧊 En heladera siempre quedan<br>8 Jugos de cada sabor + 10 leches
+    </div>
     <div class="card">
       <div class="card-title">Jugos</div>
       ${buildCierreRows(JUGOS, ['heladera','deposito','oficina'], 'u')}
@@ -567,7 +602,7 @@ function renderCierre() {
     </div>
     <div class="card">
       <div class="card-title">Otros</div>
-      ${buildCierreRows(OTROS_PRODS, ['deposito','oficina'], null)}
+      ${buildCierreRows(OTROS_PRODS, ['deposito','oficina'], null, { deposito: 'Arriba', oficina: 'Abajo' })}
       <div class="consumption-note" id="cierre-note" style="display:none">
         Cambios: <strong id="cierre-consumo-text"></strong>
       </div>
@@ -666,10 +701,11 @@ function initCompraValues() {
   });
 }
 
-function buildCompraRows(prods, locs, unitLabel) {
+function buildCompraRows(prods, locs, unitLabel, locLabels) {
+  locLabels = locLabels || { deposito: 'Pasillo', oficina: 'Oficina' };
   return locs.map(loc => `
     <div class="loc-group">
-      <div class="loc-header">${loc === 'deposito' ? 'Pasillo' : 'Oficina'}</div>
+      <div class="loc-header">${locLabels[loc] || loc}</div>
       ${prods.map(p => {
         const val  = compraValues[p.id]?.[loc] || 0;
         const unit = unitLabel || p.unidad || '';
@@ -710,7 +746,7 @@ function renderCompra() {
     </div>
     <div class="card">
       <div class="card-title">Otros</div>
-      ${buildCompraRows(OTROS_PRODS, ['deposito','oficina'], null)}
+      ${buildCompraRows(OTROS_PRODS, ['deposito','oficina'], null, { deposito: 'Arriba', oficina: 'Abajo' })}
       <div class="add-note" id="compra-note" style="display:none">
         A agregar: <strong id="compra-note-text"></strong>
       </div>
@@ -890,6 +926,55 @@ function renderHistorial() {
       <div class="hist-date">${h.fecha ? formatDate(h.fecha) : ''}</div>
     </div>
   `).join('');
+}
+
+// ─── INVENTARIO ───────────────────────────────────────
+function renderInventario() {
+  if (!appReady) return;
+
+  const jugosRows = JUGOS.map(p => {
+    const s = stock[p.id] || {};
+    const total = (s.heladera||0) + (s.deposito||0) + (s.oficina||0);
+    const packs = Math.floor(total / 12);
+    return `<div class="inv-row">
+      <span class="inv-name">${p.nombre}</span>
+      <span class="inv-val">${total} u <span class="inv-sub">(${packs} pack${packs !== 1 ? 's' : ''})</span></span>
+    </div>`;
+  }).join('');
+
+  const lecheRows = LECHE_PRODS.map(p => {
+    const s = stock[p.id] || {};
+    const total = (s.heladera||0) + (s.deposito||0) + (s.oficina||0);
+    const packs = Math.floor(total / 12);
+    return `<div class="inv-row">
+      <span class="inv-name">${p.nombre}</span>
+      <span class="inv-val">${total} u <span class="inv-sub">(${packs} pack${packs !== 1 ? 's' : ''})</span></span>
+    </div>`;
+  }).join('');
+
+  const otrosRows = OTROS_PRODS.map(p => {
+    const s = stock[p.id] || {};
+    const total = (s.heladera||0) + (s.deposito||0) + (s.oficina||0);
+    return `<div class="inv-row">
+      <span class="inv-name">${p.nombre}</span>
+      <span class="inv-val">${total} <span class="inv-sub">${p.unidad}</span></span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('inventario-content').innerHTML = `
+    <div class="card">
+      <div class="card-title">Jugos (Totales)</div>
+      ${jugosRows}
+    </div>
+    <div class="card">
+      <div class="card-title">Leches (Totales)</div>
+      ${lecheRows}
+    </div>
+    <div class="card">
+      <div class="card-title">Otros</div>
+      ${otrosRows}
+    </div>
+  `;
 }
 
 // ─── INIT ─────────────────────────────────────────────
