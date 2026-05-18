@@ -478,6 +478,7 @@ function hideLoading() {
   renderCierre();
   renderCompra();
   renderAlertas();
+  renderInventario();
 }
 
 setTimeout(() => {
@@ -955,7 +956,7 @@ function renderInventario() {
 
   const otrosRows = OTROS_PRODS.map(p => {
     const s = stock[p.id] || {};
-    const total = (s.heladera||0) + (s.deposito||0) + (s.oficina||0);
+    const total = (s.deposito||0) + (s.oficina||0);
     return `<div class="inv-row">
       <span class="inv-name">${p.nombre}</span>
       <span class="inv-val">${total} <span class="inv-sub">${p.unidad}</span></span>
