@@ -259,7 +259,66 @@
     .inv-name { font-size: 14px; font-weight: 500; }
     .inv-val { font-size: 18px; font-weight: 700; color: var(--brown); text-align: right; }
     .inv-sub { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+
+    /* ── Dashboard ── */
+    .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pill {
+      padding: 6px 12px; border-radius: 18px;
+      border: 1.5px solid var(--border); background: white;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      color: var(--text-muted); transition: all 0.15s;
+    }
+    .pill.active { background: var(--brown); color: white; border-color: var(--brown); }
+
+    .kpi-grid {
+      display: grid; gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      margin-bottom: 10px;
+    }
+    .kpi-card {
+      background: var(--card); border-radius: 12px; padding: 12px 14px;
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+    }
+    .kpi-label {
+      font-size: 10px; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+    }
+    .kpi-value { font-size: 24px; font-weight: 700; color: var(--brown); line-height: 1.1; }
+    .kpi-value-sm { font-size: 15px; font-weight: 700; color: var(--brown); line-height: 1.2; }
+    .kpi-sub { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-left: 2px; }
+
+    .chart-wrap { position: relative; height: 240px; margin-top: 4px; }
+
+    .dash-table-wrap { overflow-x: auto; margin: 0 -4px; }
+    .dash-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+      min-width: 480px;
+    }
+    .dash-table th {
+      text-align: left; padding: 8px 6px;
+      border-bottom: 2px solid var(--border);
+      color: var(--text-muted); font-weight: 700;
+      text-transform: uppercase; font-size: 10px; letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+    .dash-table td {
+      padding: 8px 6px; border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .dash-table tr:last-child td { border-bottom: none; }
+    .dash-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .dash-table td.num.strong { font-weight: 700; color: var(--brown); }
+    .dash-table td.warn { color: var(--danger); font-weight: 700; }
+    .dash-table td.ok   { color: var(--ok); font-weight: 700; }
+
+    .insight-box {
+      font-size: 12px; color: var(--text-muted);
+      background: var(--bg); padding: 10px 12px; border-radius: 8px;
+      line-height: 1.5; margin-top: 8px;
+    }
+    .insight-box strong { color: var(--brown); }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -305,6 +364,11 @@
 <!-- INVENTARIO -->
 <div id="panel-inventario" class="panel active">
   <div id="inventario-content"></div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="panel-dashboard" class="panel">
+  <div id="dashboard-content"></div>
 </div>
 
 <!-- EMAIL MODAL -->
@@ -355,7 +419,15 @@
     </svg>
     <span>Historial</span>
   </button>
-  
+  <button onclick="showPanel('dashboard', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="6" y1="20" x2="6" y2="14"/>
+      <line x1="12" y1="20" x2="12" y2="8"/>
+      <line x1="18" y1="20" x2="18" y2="11"/>
+      <line x1="3" y1="20" x2="21" y2="20"/>
+    </svg>
+    <span>Dashboard</span>
+  </button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -457,14 +529,11 @@ onValue(ref(db, 'stock'), (snapshot) => {
 
 onValue(ref(db, 'historial'), (snapshot) => {
   const data = snapshot.val();
-  if (data) {
-    historial = Object.values(data)
-      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
-      .slice(0, 20);
-  } else {
-    historial = [];
-  }
+  historial = data
+    ? Object.values(data).sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+    : [];
   renderHistorial();
+  if (document.querySelector('.panel.active')?.id === 'panel-dashboard') renderDashboard();
 });
 
 function saveStock() {
@@ -504,6 +573,7 @@ function showPanel(name, btn) {
   if (name === 'alertas')     renderAlertas();
   if (name === 'historial')   renderHistorial();
   if (name === 'inventario')  renderInventario();
+  if (name === 'dashboard')   renderDashboard();
 }
 window.showPanel = showPanel;
 
@@ -916,10 +986,11 @@ window.enviarEmail = enviarEmail;
 // ─── HISTORIAL ────────────────────────────────────────
 function renderHistorial() {
   const icons = { cierre: '📋', compra: '🛒' };
+  const top = historial.slice(0, 20);
   const titleEl = document.querySelector('#panel-historial .card-title');
-  if (titleEl) titleEl.textContent = `Últimos Registros (${historial.length})`;
+  if (titleEl) titleEl.textContent = `Últimos Registros (${top.length} de ${historial.length})`;
 
-  if (historial.length === 0) {
+  if (top.length === 0) {
     document.getElementById('historial-list').innerHTML = `
       <div class="empty">
         <div class="empty-icon">📭</div>
@@ -928,7 +999,7 @@ function renderHistorial() {
     return;
   }
 
-  document.getElementById('historial-list').innerHTML = historial.map(h => `
+  document.getElementById('historial-list').innerHTML = top.map(h => `
     <div class="hist-item">
       <div class="hist-icon ${h.tipo || 'cierre'}">${icons[h.tipo] || '📄'}</div>
       <div class="hist-body">
@@ -987,6 +1058,389 @@ function renderInventario() {
       ${otrosRows}
     </div>
   `;
+}
+
+// ─── DASHBOARD ────────────────────────────────────────
+let dashFilter = '90d';
+let dashCharts = {};
+
+const FILTER_DAYS = {
+  '30d':  30,
+  '90d':  90,
+  '180d': 180,
+  '365d': 365,
+  'all':  Infinity
+};
+const FILTER_LABELS = {
+  '30d':  '30 días',
+  '90d':  '3 meses',
+  '180d': '6 meses',
+  '365d': '1 año',
+  'all':  'Todo'
+};
+
+const CHART_COLORS = ['#6B3A2A', '#C8923A', '#2D9B6F', '#C87820', '#C03030', '#7A5548', '#4A90D9', '#9B59B6'];
+
+function parseDetalle(entries) {
+  const records = [];
+  entries.forEach(h => {
+    const fechaMs = new Date(h.fecha).getTime();
+    if (isNaN(fechaMs)) return;
+    const lines = (h.detalle || '').split('\n');
+    lines.forEach(rawLine => {
+      const line = rawLine.trim();
+      if (!line) return;
+      let m = line.match(/^(.+?)\s*\[([^\]]+)\]:\s*antes\s+(\d+)\s*→\s*ahora\s+(\d+)/);
+      if (m) {
+        const antes = +m[3], despues = +m[4];
+        records.push({
+          tipo: 'cierre', fecha: h.fecha, fechaMs,
+          nombre: m[1].trim(), loc: m[2],
+          antes, despues,
+          consumido: Math.max(0, antes - despues),
+          ajuste:    Math.max(0, despues - antes),
+        });
+        return;
+      }
+      m = line.match(/^(.+?)\s*\[([^\]]+)\]:\s*\+(\d+)(?:\s+pack\s+\((\d+)u\))?/);
+      if (m) {
+        const qty = +m[3];
+        const units = m[4] ? +m[4] : qty;
+        records.push({
+          tipo: 'compra', fecha: h.fecha, fechaMs,
+          nombre: m[1].trim(), loc: m[2],
+          qty, units,
+        });
+      }
+    });
+  });
+  return records;
+}
+
+function getSundayOfWeek(dateMs) {
+  const d = new Date(dateMs);
+  const day = d.getDay();
+  d.setDate(d.getDate() - day);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+function fmtShortDate(ms) {
+  return new Date(ms).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+}
+
+function setDashFilter(f) {
+  dashFilter = f;
+  renderDashboard();
+}
+window.setDashFilter = setDashFilter;
+
+function renderDashboard() {
+  if (!appReady) return;
+  const container = document.getElementById('dashboard-content');
+
+  if (typeof Chart === 'undefined') {
+    container.innerHTML = '<div class="card"><div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Cargando librería de gráficos…</div></div></div>';
+    setTimeout(renderDashboard, 400);
+    return;
+  }
+
+  // Destroy previous charts to avoid leaks
+  Object.values(dashCharts).forEach(c => { try { c.destroy(); } catch (e) {} });
+  dashCharts = {};
+
+  const allRecords = parseDetalle(historial);
+  const days = FILTER_DAYS[dashFilter];
+  const cutoff = days === Infinity ? 0 : Date.now() - days * 86400000;
+  const records = allRecords.filter(r => r.fechaMs >= cutoff);
+
+  const cierreRecs = records.filter(r => r.tipo === 'cierre');
+  const compraRecs = records.filter(r => r.tipo === 'compra');
+
+  // Unique cierre dates (proxy de "domingos")
+  const cierreEntries = historial.filter(h => h.tipo === 'cierre' && new Date(h.fecha).getTime() >= cutoff);
+  const domingos = new Set(cierreEntries.map(h => {
+    const d = new Date(h.fecha);
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  })).size;
+
+  // Aggregations per product
+  const consumoPorProd = {};
+  cierreRecs.forEach(r => {
+    consumoPorProd[r.nombre] = (consumoPorProd[r.nombre] || 0) + r.consumido;
+  });
+  const comprasPorProd = {};
+  compraRecs.forEach(r => {
+    comprasPorProd[r.nombre] = (comprasPorProd[r.nombre] || 0) + r.units;
+  });
+
+  const totalConsumo = Object.values(consumoPorProd).reduce((s, n) => s + n, 0);
+  const totalCompras = Object.values(comprasPorProd).reduce((s, n) => s + n, 0);
+  const topProd = Object.entries(consumoPorProd).sort((a, b) => b[1] - a[1])[0];
+
+  // Detect product with worst coverage (lowest weeks remaining)
+  let critico = null;
+  PRODUCTOS.forEach(p => {
+    const cons = consumoPorProd[p.nombre] || 0;
+    if (cons === 0 || domingos === 0) return;
+    const promDom = cons / domingos;
+    const s = stock[p.id] || {};
+    const stockAct = PACK_PRODS.has(p.id)
+      ? (s.heladera || 0) + (s.deposito || 0) + (s.oficina || 0)
+      : (s.deposito || 0) + (s.oficina || 0);
+    const cobertura = stockAct / promDom;
+    if (critico === null || cobertura < critico.cobertura) {
+      critico = { nombre: p.nombre, cobertura, stockAct, promDom };
+    }
+  });
+
+  container.innerHTML = `
+    <!-- Filtros -->
+    <div class="card">
+      <div class="card-title">Período de análisis</div>
+      <div class="filter-pills">
+        ${Object.entries(FILTER_LABELS).map(([k, label]) =>
+          `<button class="pill ${k === dashFilter ? 'active' : ''}" onclick="setDashFilter('${k}')">${label}</button>`
+        ).join('')}
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Domingos</div>
+        <div class="kpi-value">${domingos}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Consumido</div>
+        <div class="kpi-value">${totalConsumo}<span class="kpi-sub">u</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Comprado</div>
+        <div class="kpi-value">${totalCompras}<span class="kpi-sub">u</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Top consumido</div>
+        <div class="kpi-value-sm">${topProd ? topProd[0] : '—'}</div>
+        <div class="kpi-sub">${topProd ? topProd[1] + ' u' : 'Sin datos'}</div>
+      </div>
+      ${critico ? `
+        <div class="kpi-card" style="border-left: 4px solid var(--danger);">
+          <div class="kpi-label">⚠️ Stock más ajustado</div>
+          <div class="kpi-value-sm">${critico.nombre}</div>
+          <div class="kpi-sub">${critico.cobertura.toFixed(1)} domingos restantes</div>
+        </div>
+      ` : ''}
+    </div>
+
+    ${records.length === 0 ? `
+      <div class="card">
+        <div class="empty">
+          <div class="empty-icon">📊</div>
+          <div class="empty-text">No hay datos en este período</div>
+        </div>
+      </div>
+    ` : `
+      <!-- Timeline -->
+      <div class="card">
+        <div class="card-title">Consumo por semana — Top 5</div>
+        <div class="chart-wrap"><canvas id="chart-timeline"></canvas></div>
+      </div>
+
+      <!-- Top productos -->
+      <div class="card">
+        <div class="card-title">Top productos consumidos</div>
+        <div class="chart-wrap"><canvas id="chart-top"></canvas></div>
+      </div>
+
+      <!-- Compras vs Consumo -->
+      <div class="card">
+        <div class="card-title">Compras vs Consumo</div>
+        <div class="chart-wrap"><canvas id="chart-compra-cons"></canvas></div>
+        <div class="insight-box">
+          <strong>Balance:</strong> diferencia entre lo comprado y lo consumido en el período.
+          Valores positivos indican acumulación; negativos, consumo del stock previo.
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="card">
+        <div class="card-title">Resumen por producto</div>
+        <div class="dash-table-wrap">
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th class="num">Consumo</th>
+                <th class="num">Prom/dom</th>
+                <th class="num">Compras</th>
+                <th class="num">Stock</th>
+                <th class="num">Dom. rest.</th>
+              </tr>
+            </thead>
+            <tbody>${buildDashTable(consumoPorProd, comprasPorProd, domingos)}</tbody>
+          </table>
+        </div>
+        <div class="insight-box">
+          <strong>Dom. rest.</strong> = stock actual ÷ promedio por domingo. Estima cuántos domingos cubre el stock al ritmo actual.
+        </div>
+      </div>
+    `}
+  `;
+
+  if (records.length > 0) {
+    renderChartTimeline(cierreRecs);
+    renderChartTop(consumoPorProd);
+    renderChartCompraCons(consumoPorProd, comprasPorProd);
+  }
+}
+window.renderDashboard = renderDashboard;
+
+function buildDashTable(consumo, compras, domingos) {
+  const rows = PRODUCTOS.map(p => {
+    const cons = consumo[p.nombre] || 0;
+    const comp = compras[p.nombre] || 0;
+    const promDom = domingos > 0 ? cons / domingos : 0;
+    const s = stock[p.id] || {};
+    const stockAct = PACK_PRODS.has(p.id)
+      ? (s.heladera || 0) + (s.deposito || 0) + (s.oficina || 0)
+      : (s.deposito || 0) + (s.oficina || 0);
+    const cobertura = promDom > 0 ? stockAct / promDom : null;
+    return { nombre: p.nombre, cons, comp, promDom, stockAct, cobertura };
+  });
+
+  rows.sort((a, b) => b.cons - a.cons);
+
+  return rows.map(r => {
+    let coberturaCell = '—';
+    let coberturaClass = '';
+    if (r.cobertura !== null) {
+      coberturaCell = r.cobertura.toFixed(1);
+      if (r.cobertura < 1) coberturaClass = 'warn';
+      else if (r.cobertura > 4) coberturaClass = 'ok';
+    } else if (r.stockAct > 0) {
+      coberturaCell = '∞';
+      coberturaClass = 'ok';
+    }
+    return `
+      <tr>
+        <td>${r.nombre}</td>
+        <td class="num strong">${r.cons}</td>
+        <td class="num">${r.promDom.toFixed(1)}</td>
+        <td class="num">${r.comp}</td>
+        <td class="num">${r.stockAct}</td>
+        <td class="num ${coberturaClass}">${coberturaCell}</td>
+      </tr>`;
+  }).join('');
+}
+
+function renderChartTimeline(cierreRecs) {
+  const ctx = document.getElementById('chart-timeline');
+  if (!ctx) return;
+
+  // Group by week
+  const weeks = {};
+  const productTotals = {};
+  cierreRecs.forEach(r => {
+    if (r.consumido <= 0) return;
+    const wk = getSundayOfWeek(r.fechaMs);
+    if (!weeks[wk]) weeks[wk] = {};
+    weeks[wk][r.nombre] = (weeks[wk][r.nombre] || 0) + r.consumido;
+    productTotals[r.nombre] = (productTotals[r.nombre] || 0) + r.consumido;
+  });
+
+  const top5 = Object.entries(productTotals).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([n]) => n);
+  const weekKeys = Object.keys(weeks).sort((a, b) => +a - +b);
+  const labels = weekKeys.map(k => fmtShortDate(+k));
+
+  const datasets = top5.map((nombre, i) => ({
+    label: nombre,
+    data: weekKeys.map(k => weeks[k][nombre] || 0),
+    backgroundColor: CHART_COLORS[i],
+    borderColor: CHART_COLORS[i],
+    borderWidth: 2,
+    tension: 0.25,
+    fill: false,
+  }));
+
+  dashCharts.timeline = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } },
+      scales: {
+        y: { beginAtZero: true, ticks: { font: { size: 11 } } },
+        x: { ticks: { font: { size: 10 }, maxRotation: 0 } }
+      }
+    }
+  });
+}
+
+function renderChartTop(consumo) {
+  const ctx = document.getElementById('chart-top');
+  if (!ctx) return;
+
+  const sorted = Object.entries(consumo)
+    .filter(([, v]) => v > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+
+  dashCharts.top = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(([n]) => n),
+      datasets: [{
+        label: 'Consumo',
+        data: sorted.map(([, v]) => v),
+        backgroundColor: '#6B3A2A',
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, ticks: { font: { size: 11 } } },
+        y: { ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+function renderChartCompraCons(consumo, compras) {
+  const ctx = document.getElementById('chart-compra-cons');
+  if (!ctx) return;
+
+  const nombres = new Set([...Object.keys(consumo), ...Object.keys(compras)]);
+  const ordered = [...nombres]
+    .filter(n => (consumo[n] || 0) > 0 || (compras[n] || 0) > 0)
+    .sort((a, b) => (consumo[b] || 0) - (consumo[a] || 0))
+    .slice(0, 8);
+
+  dashCharts.compraCons = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ordered,
+      datasets: [
+        { label: 'Comprado',  data: ordered.map(n => compras[n] || 0), backgroundColor: '#2D9B6F', borderRadius: 4 },
+        { label: 'Consumido', data: ordered.map(n => consumo[n] || 0), backgroundColor: '#C87820', borderRadius: 4 },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } },
+      scales: {
+        y: { beginAtZero: true, ticks: { font: { size: 11 } } },
+        x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 30 } }
+      }
+    }
+  });
 }
 
 // ─── INIT ─────────────────────────────────────────────
