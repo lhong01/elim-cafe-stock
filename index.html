@@ -519,7 +519,8 @@ function showToast(msg) {
 
 function getAlertValue(prodId) {
   const s = stock[prodId] || {};
-  const total = (s.heladera || 0) + (s.deposito || 0) + (s.oficina || 0);
+  const isPack = PACK_PRODS.has(prodId);
+  const total = (isPack ? (s.heladera || 0) : 0) + (s.deposito || 0) + (s.oficina || 0);
   return ALERTAS_CFG[prodId]?.pack ? Math.floor(total / 12) : total;
 }
 
@@ -838,8 +839,9 @@ function renderAlertas() {
     const status = getStatus(p.id);
     const val    = getAlertValue(p.id);
     const s      = stock[p.id] || {};
+    const isPack = PACK_PRODS.has(p.id);
     const partes = [];
-    if ((s.heladera || 0) > 0) partes.push(`Hel: ${s.heladera}`);
+    if (isPack && (s.heladera || 0) > 0) partes.push(`Hel: ${s.heladera}`);
     if ((s.deposito || 0) > 0) partes.push(`Pas: ${s.deposito}`);
     if ((s.oficina  || 0) > 0) partes.push(`Ofi: ${s.oficina}`);
     const loc = partes.length ? partes.join(' · ') : 'Sin stock';
