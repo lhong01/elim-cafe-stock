@@ -911,6 +911,8 @@ window.enviarEmail = enviarEmail;
 // ─── HISTORIAL ────────────────────────────────────────
 function renderHistorial() {
   const icons = { cierre: '📋', compra: '🛒' };
+  const titleEl = document.querySelector('#panel-historial .card-title');
+  if (titleEl) titleEl.textContent = `Últimos Registros (${historial.length})`;
 
   if (historial.length === 0) {
     document.getElementById('historial-list').innerHTML = `
