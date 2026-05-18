@@ -362,7 +362,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, push, query, limitToLast } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
 // ─── FIREBASE ─────────────────────────────────────────
 const app = initializeApp({
@@ -455,9 +455,10 @@ onValue(ref(db, 'stock'), (snapshot) => {
   if (active === 'panel-inventario')  renderInventario();
 });
 
-onValue(query(ref(db, 'historial'), limitToLast(20)), (snapshot) => {
+onValue(ref(db, 'historial'), (snapshot) => {
   historial = [];
   snapshot.forEach(child => historial.unshift(child.val()));
+  if (historial.length > 20) historial = historial.slice(0, 20);
   renderHistorial();
 });
 
