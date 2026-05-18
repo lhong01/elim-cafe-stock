@@ -456,9 +456,14 @@ onValue(ref(db, 'stock'), (snapshot) => {
 });
 
 onValue(ref(db, 'historial'), (snapshot) => {
-  historial = [];
-  snapshot.forEach(child => historial.unshift(child.val()));
-  if (historial.length > 20) historial = historial.slice(0, 20);
+  const data = snapshot.val();
+  if (data) {
+    historial = Object.values(data)
+      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+      .slice(0, 20);
+  } else {
+    historial = [];
+  }
   renderHistorial();
 });
 
