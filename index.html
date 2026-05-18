@@ -467,7 +467,7 @@ function saveStock() {
 
 function addHistorial(entry) {
   push(ref(db, 'historial'), { ...entry, fecha: new Date().toISOString() })
-    .catch(e => console.error('addHistorial:', e));
+    .catch(e => { console.error('addHistorial:', e); showToast('⚠️ Error al guardar en historial'); });
 }
 
 // ─── LOADING ──────────────────────────────────────────
